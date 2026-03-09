@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Crucible from "./pages/Crucible";
 import NeuralLink from "./pages/NeuralLink";
+import ContainmentCell from "./pages/ContainmentCell";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/crucible" element={<Crucible />} />
           <Route path="/neural-link" element={<NeuralLink />} />
+          <Route path="/containment" element={<ContainmentCell />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
