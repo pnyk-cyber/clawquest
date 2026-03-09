@@ -61,8 +61,13 @@ const beasts = [
 ];
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const isLinked = searchParams.get("linked") === "true";
+  const isGuest = searchParams.get("mode") === "guest";
+
   return (
     <div className="scanlines vignette min-h-screen bg-background">
+      {(isLinked || isGuest) && <NeuralNav isGuest={isGuest} />}
       <TokenTicker />
       <HeroSection />
 
