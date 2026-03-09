@@ -21,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/crucible" element={<Crucible />} />
           <Route path="/neural-link" element={<NeuralLink />} />
+          <Route path="/containment" element={<ContainmentCell />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
