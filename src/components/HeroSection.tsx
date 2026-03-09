@@ -68,7 +68,7 @@ const HeroSection = () => {
               <div className="absolute inset-0 bg-neon-claw/20 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
 
-            <button onClick={() => navigate("/jack-in")} className="group relative overflow-hidden border border-glitch-cyan/40 bg-transparent px-8 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-glitch-cyan transition-all hover:border-glitch-cyan hover:bg-glitch-cyan/10">
+            <button className="group relative overflow-hidden border border-glitch-cyan/40 bg-transparent px-8 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-glitch-cyan transition-all hover:border-glitch-cyan hover:bg-glitch-cyan/10">
               <span className="relative z-10">Sync Neural Link</span>
             </button>
           </div>
