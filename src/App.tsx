@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Crucible from "./pages/Crucible";
 import NotFound from "./pages/NotFound";
+import NeuralLink from "./components/NeuralLink";
 
 const queryClient = new QueryClient();
 
@@ -14,6 +15,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <NeuralLink />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
