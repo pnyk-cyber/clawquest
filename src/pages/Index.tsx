@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import TokenTicker from "@/components/TokenTicker";
 import HeroSection from "@/components/HeroSection";
 import BeastCard from "@/components/BeastCard";
@@ -5,6 +6,7 @@ import BiomeSection from "@/components/BiomeSection";
 import BattlePreview from "@/components/BattlePreview";
 import TokenSection from "@/components/TokenSection";
 import FooterCTA from "@/components/FooterCTA";
+import NeuralNav from "@/components/NeuralNav";
 
 import beastIronmaw from "@/assets/beast-ironmaw.png";
 import beastPrisma from "@/assets/beast-prisma.png";
@@ -59,8 +61,13 @@ const beasts = [
 ];
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const isLinked = searchParams.get("linked") === "true";
+  const isGuest = searchParams.get("mode") === "guest";
+
   return (
     <div className="scanlines vignette min-h-screen bg-background">
+      {(isLinked || isGuest) && <NeuralNav isGuest={isGuest} />}
       <TokenTicker />
       <HeroSection />
 
