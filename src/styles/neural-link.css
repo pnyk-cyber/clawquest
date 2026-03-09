@@ -1,0 +1,378 @@
+/* Neural Link Interface Animations */
+
+/* Cable insertion animation */
+@keyframes cable-descend {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(5%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes cable-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px hsl(var(--glitch-cyan)));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px hsl(var(--glitch-cyan))) drop-shadow(0 0 40px hsl(var(--neon-claw)));
+  }
+}
+
+.animate-cable-descend {
+  animation: cable-descend 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-cable-pulse {
+  animation: cable-pulse 2s ease-in-out infinite;
+}
+
+/* Steam burst effect */
+@keyframes steam-burst {
+  0% {
+    transform: scale(0) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2) translateY(-50px);
+    opacity: 0;
+  }
+}
+
+.steam-particle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, hsl(var(--glitch-cyan) / 0.6), transparent);
+  border-radius: 50%;
+  animation: steam-burst 0.8s ease-out forwards;
+}
+
+/* Hexagonal button styling */
+.hex-button {
+  position: relative;
+  clip-path: polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.hex-button:hover {
+  transform: scale(1.05);
+}
+
+.hex-button:active {
+  transform: scale(0.95);
+}
+
+/* Hydraulic piston effect */
+@keyframes piston-compress {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.7); }
+  100% { transform: scaleY(1); }
+}
+
+.piston {
+  transition: transform 0.15s ease-out;
+}
+
+.hex-button:hover .piston {
+  transform: scaleY(0.7);
+}
+
+/* THE SMASH effect */
+@keyframes white-flash {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes chromatic-spike {
+  0% {
+    filter: none;
+  }
+  25% {
+    filter: drop-shadow(4px 0 0 hsl(var(--neon-claw))) drop-shadow(-4px 0 0 hsl(var(--glitch-cyan)));
+  }
+  50% {
+    filter: drop-shadow(8px 0 0 hsl(var(--neon-claw))) drop-shadow(-8px 0 0 hsl(var(--glitch-cyan)));
+  }
+  100% {
+    filter: none;
+  }
+}
+
+@keyframes shockwave {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+    border-width: 4px;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+.the-smash-flash {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 9999;
+  animation: white-flash 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+.the-smash-chromatic {
+  animation: chromatic-spike 0.5s ease-out;
+}
+
+.shockwave-ring {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin-left: -50px;
+  margin-top: -50px;
+  border: 4px solid hsl(var(--toxic-shard));
+  border-radius: 50%;
+  z-index: 9998;
+  animation: shockwave 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Glitch text input effect */
+@keyframes glitch-char {
+  0% {
+    opacity: 0;
+    transform: translateX(-5px);
+    color: hsl(var(--neon-claw));
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2px);
+    color: hsl(var(--glitch-cyan));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    color: inherit;
+  }
+}
+
+.glitch-char {
+  display: inline-block;
+  animation: glitch-char 0.05s ease-out forwards;
+}
+
+/* Terminal cursor */
+@keyframes blink-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 18px;
+  background: hsl(var(--glitch-cyan));
+  animation: blink-cursor 1s step-end infinite;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+/* Hydraulic press button effect */
+@keyframes hydraulic-press {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+  60% { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+
+.hydraulic-button:active {
+  animation: hydraulic-press 0.3s ease-out;
+}
+
+/* Battle background animations */
+@keyframes battle-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes impact-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, -1px); }
+  20% { transform: translate(2px, 2px); }
+  30% { transform: translate(-1px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  50% { transform: translate(-2px, 1px); }
+  60% { transform: translate(1px, -1px); }
+  70% { transform: translate(-1px, -2px); }
+  80% { transform: translate(2px, 1px); }
+  90% { transform: translate(-2px, -1px); }
+}
+
+.battle-bg {
+  animation: battle-pulse 4s ease-in-out infinite;
+}
+
+.impact-shake {
+  animation: impact-shake 0.3s ease-out;
+}
+
+/* Stamp slam effect */
+@keyframes stamp-slam {
+  0% {
+    transform: scale(3) rotate(-15deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1) rotate(-8deg);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(1.05) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+.stamp-slam {
+  animation: stamp-slam 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Code verification beep */
+@keyframes code-beep {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 20px hsl(var(--glitch-cyan)); }
+}
+
+.code-beep {
+  animation: code-beep 0.2s ease-out;
+}
+
+/* Screen rip transition */
+@keyframes rip-left {
+  0% { clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); }
+  100% { clip-path: polygon(0 0, 0 0, -50% 100%, 0 100%); }
+}
+
+@keyframes rip-right {
+  0% { clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%); }
+  100% { clip-path: polygon(150% 0, 100% 0, 100% 100%, 150% 100%); }
+}
+
+/* Static noise overlay */
+@keyframes static-noise {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+.static-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.1;
+  pointer-events: none;
+  animation: static-noise 0.5s steps(10) infinite;
+}
+
+/* Error shake */
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.error-shake {
+  animation: error-shake 0.5s ease-out;
+}
+
+/* Cryo thaw effect */
+@keyframes cryo-thaw {
+  0% {
+    filter: brightness(2) saturate(0) blur(4px);
+    transform: scale(1.1);
+  }
+  50% {
+    filter: brightness(1.5) saturate(0.5) blur(2px);
+    transform: scale(1.05);
+  }
+  100% {
+    filter: brightness(1) saturate(1) blur(0);
+    transform: scale(1);
+  }
+}
+
+.cryo-thaw {
+  animation: cryo-thaw 1.5s ease-out forwards;
+}
+
+/* Frost particles */
+@keyframes frost-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.frost-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: hsl(var(--glitch-cyan));
+  animation: frost-fall 1s ease-out forwards;
+}
+
+/* Signal strength bars animation */
+@keyframes signal-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.signal-bar {
+  animation: signal-pulse 1s ease-in-out infinite;
+}
+
+.signal-bar:nth-child(2) { animation-delay: 0.1s; }
+.signal-bar:nth-child(3) { animation-delay: 0.2s; }
+.signal-bar:nth-child(4) { animation-delay: 0.3s; }
+
+/* Data stream particles */
+@keyframes data-stream {
+  0% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+}
+
+.data-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: hsl(var(--glitch-cyan));
+  animation: data-stream 0.5s linear infinite;
+}
