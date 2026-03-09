@@ -1,4 +1,4 @@
-// Post-connection nav bar with token readouts and neural link status
+// Post-connection nav — INDUSTIMAL aesthetic
 
 interface NeuralNavProps {
   isGuest?: boolean;
@@ -7,38 +7,27 @@ interface NeuralNavProps {
 const NeuralNav = ({ isGuest = false }: NeuralNavProps) => {
   return (
     <>
-      {/* Guest upgrade CTA */}
       {isGuest && (
-        <div className="upgrade-cta-bar w-full px-4 py-2 flex items-center justify-center gap-3">
-          <span className="font-data text-[9px] uppercase tracking-[0.3em] text-rust-gold">
-            DEMO MODE ACTIVE
+        <div className="w-full border-b-2 border-[#ff9500] bg-[#1a1a1a] px-6 py-3 flex items-center justify-between">
+          <span className="font-mono text-xs uppercase tracking-[0.1em] text-[#ff9500] font-bold">
+            GUEST MODE
           </span>
-          <span className="text-static-gray-light">|</span>
-          <button className="font-display text-[10px] font-bold uppercase tracking-wider text-rust-gold hover:text-foreground transition-colors">
-            UPGRADE TO FULL UPLINK
+          <button className="text-xs uppercase tracking-[0.1em] text-[#ff9500] font-bold border border-[#ff9500] px-4 py-1 hover:bg-[#ff9500] hover:text-[#1a1a1a] transition-colors duration-150">
+            UPGRADE
           </button>
         </div>
       )}
 
-      {/* Token readouts bar */}
       {!isGuest && (
-        <div className="w-full border-b border-border/30 bg-card/50 px-4 py-2">
+        <div className="w-full border-b border-[#333] bg-[#1a1a1a] px-6 py-3">
           <div className="container mx-auto flex items-center justify-between">
-            {/* Left: Token balances */}
-            <div className="flex items-center gap-4">
-              <TokenReadout label="$CLAW" value="12,847" color="neon-claw" />
-              <span className="text-static-gray/50">|</span>
-              <TokenReadout label="$SHARD" value="3,291" color="glitch-cyan" />
-              <span className="text-static-gray/50">|</span>
-              <TokenReadout label="$BLOOD" value="847" color="neon-claw" />
+            <div className="flex items-center gap-8">
+              <TokenReadout label="CLAW" value="12,847" />
+              <TokenReadout label="SHARD" value="3,291" />
+              <TokenReadout label="BLOOD" value="847" />
             </div>
-
-            {/* Right: Neural link status */}
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 bg-toxic-shard neural-stable" />
-              <span className="font-data text-[9px] uppercase tracking-[0.2em] text-toxic-shard hidden sm:inline">
-                NEURAL LINK: STABLE
-              </span>
+              <span className="industimal-status-dot" />
             </div>
           </div>
         </div>
@@ -47,20 +36,12 @@ const NeuralNav = ({ isGuest = false }: NeuralNavProps) => {
   );
 };
 
-const TokenReadout = ({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) => (
-  <div className="flex items-center gap-2">
-    <span className={`font-data text-[9px] uppercase tracking-wider text-${color}/60`}>
-      {label}
+const TokenReadout = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex flex-col">
+    <span className="text-[10px] uppercase tracking-[0.15em] text-[#666] font-mono font-bold">
+      ${label}
     </span>
-    <span className={`font-data text-xs font-bold text-${color} token-readout`}>
+    <span className="text-2xl font-black tracking-tight text-[#f0f0f0] font-mono leading-none">
       {value}
     </span>
   </div>
