@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import heroBeast from "@/assets/hero-beast.png";
 import { ClawMarkIcon } from "./ClawIcons";
 
