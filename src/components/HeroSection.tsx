@@ -60,7 +60,7 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap gap-4">
-            <button className="group relative overflow-hidden border-2 border-neon-claw bg-neon-claw/10 px-8 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-neon-claw transition-all hover:bg-neon-claw hover:text-primary-foreground animate-breathe">
+            <button onClick={() => navigate("/crucible")} className="group relative overflow-hidden border-2 border-neon-claw bg-neon-claw/10 px-8 py-3.5 font-display text-sm font-bold uppercase tracking-widest text-neon-claw transition-all hover:bg-neon-claw hover:text-primary-foreground animate-breathe">
               <span className="relative z-10 flex items-center gap-3">
                 <ClawMarkIcon size={18} />
                 Enter the Arena
