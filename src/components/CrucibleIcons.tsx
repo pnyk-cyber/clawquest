@@ -61,7 +61,7 @@ export const WarningTriangleIcon = ({ className = "", size = 24 }: { className?:
 );
 
 export const HydraulicPistonIcon = ({ className = "", size = 24, style }: { className?: string; size?: number; style?: React.CSSProperties }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={style}>
     <rect x="8" y="2" width="8" height="6" stroke="currentColor" strokeWidth="2" />
     <rect x="10" y="8" width="4" height="10" stroke="currentColor" strokeWidth="2" />
     <rect x="6" y="18" width="12" height="4" stroke="currentColor" strokeWidth="2" />
