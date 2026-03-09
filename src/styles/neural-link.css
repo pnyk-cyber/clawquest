@@ -1,0 +1,272 @@
+/* ============================================
+   NEURAL LINK INTERFACE — Connection Flow Styles
+   ============================================ */
+
+/* Brain scan lines background */
+.neural-scan-bg {
+  position: relative;
+}
+.neural-scan-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 40px,
+    hsl(187 100% 50% / 0.02) 40px,
+    hsl(187 100% 50% / 0.02) 41px
+  );
+  animation: brain-scan 8s linear infinite;
+}
+
+@keyframes brain-scan {
+  from { transform: translateY(0); }
+  to { transform: translateY(41px); }
+}
+
+/* Chromatic aberration border */
+.chromatic-border {
+  position: relative;
+}
+.chromatic-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1px solid hsl(349 100% 50% / 0.3);
+  transform: translate(2px, -1px);
+  pointer-events: none;
+}
+.chromatic-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1px solid hsl(187 100% 50% / 0.3);
+  transform: translate(-2px, 1px);
+  pointer-events: none;
+}
+
+/* Hexagonal port button */
+.hex-port {
+  clip-path: polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.hex-port:hover {
+  transform: scaleY(0.95);
+}
+
+.hex-port:active {
+  transform: scaleY(0.9);
+}
+
+.hex-port.active {
+  animation: port-activate 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes port-activate {
+  0% { transform: scaleY(0.9); }
+  50% { transform: scaleY(1.05); }
+  100% { transform: scaleY(1); }
+}
+
+/* Steam release on activation */
+.steam-release {
+  position: relative;
+}
+.steam-release::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 40px;
+  height: 20px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, hsl(187 100% 50% / 0.15) 0%, transparent 70%);
+  animation: steam-puff 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes steam-puff {
+  0% { opacity: 1; transform: translateX(-50%) scaleY(0.5); }
+  100% { opacity: 0; transform: translateX(-50%) scaleY(2) translateY(-10px); }
+}
+
+/* Terminal typing cursor */
+.terminal-input {
+  caret-color: hsl(187 100% 50%);
+}
+.terminal-input::placeholder {
+  color: hsl(240 10% 30%);
+}
+.terminal-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px hsl(187 100% 50% / 0.4);
+}
+
+/* Verification code boxes */
+.verify-box {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 24px;
+  caret-color: hsl(349 100% 50%);
+  transition: all 0.2s ease;
+}
+.verify-box:focus {
+  outline: none;
+  border-color: hsl(349 100% 50%);
+  box-shadow: 0 0 15px hsl(349 100% 50% / 0.3);
+}
+.verify-box.filled {
+  border-color: hsl(187 100% 50%);
+  color: hsl(187 100% 50%);
+}
+
+/* Cable insertion animation */
+.cable-insert {
+  animation: cable-draw 1.2s ease-out forwards;
+}
+
+/* Spark lines */
+.spark-line {
+  animation: spark-flash 0.3s ease-out infinite alternate;
+}
+.spark-line:nth-child(2) { animation-delay: 0.05s; }
+.spark-line:nth-child(3) { animation-delay: 0.1s; }
+.spark-line:nth-child(4) { animation-delay: 0.15s; }
+
+@keyframes spark-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+/* DNA helix animation */
+.dna-strand-1 {
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: dna-draw 2s ease-out forwards;
+}
+.dna-strand-2 {
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: dna-draw 2s ease-out 0.3s forwards;
+}
+
+@keyframes dna-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Success flash */
+.success-flash {
+  animation: neural-flash 0.6s ease-out forwards;
+}
+
+@keyframes neural-flash {
+  0% { background: hsl(0 0% 100%); }
+  30% { background: hsl(0 0% 100% / 0.8); }
+  100% { background: transparent; }
+}
+
+/* Error static */
+.error-static {
+  animation: static-noise 0.15s steps(4) infinite;
+}
+
+@keyframes static-noise {
+  0% { background-position: 0 0; }
+  25% { background-position: -50px -50px; }
+  50% { background-position: 50px 25px; }
+  75% { background-position: -25px 50px; }
+  100% { background-position: 50px -25px; }
+}
+
+/* Connection strength bars */
+.strength-bar {
+  transition: all 0.3s ease;
+}
+.strength-bar.active {
+  animation: bar-fill 0.5s ease-out forwards;
+}
+
+@keyframes bar-fill {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* Data stream particles */
+.data-stream {
+  position: relative;
+  overflow: hidden;
+}
+.data-stream::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    hsl(187 100% 50% / 0.6),
+    transparent
+  );
+  animation: data-flow 1.5s linear infinite;
+}
+
+@keyframes data-flow {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
+}
+
+/* Neural link stable indicator */
+.neural-stable {
+  animation: stable-pulse 2s ease-in-out infinite;
+}
+
+@keyframes stable-pulse {
+  0%, 100% { box-shadow: 0 0 4px hsl(105 100% 55% / 0.4); }
+  50% { box-shadow: 0 0 12px hsl(105 100% 55% / 0.8); }
+}
+
+/* Token readout flicker */
+.token-readout {
+  animation: readout-flicker 0.1s ease-out;
+}
+
+@keyframes readout-flicker {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Circuit trace pulse for success */
+.circuit-pulse {
+  stroke-dasharray: 4 4;
+  animation: circuit-flow 1s linear infinite;
+}
+
+@keyframes circuit-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -8; }
+}
+
+/* Persistent upgrade CTA bar */
+.upgrade-cta-bar {
+  background: linear-gradient(90deg, hsl(33 100% 50% / 0.1), hsl(33 100% 50% / 0.05), hsl(33 100% 50% / 0.1));
+  border-bottom: 1px solid hsl(33 100% 50% / 0.3);
+}
+
+/* Watermark overlay */
+.demo-watermark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.04;
+}
