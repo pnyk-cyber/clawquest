@@ -3,6 +3,7 @@ import heroBeast from "@/assets/hero-beast.png";
 import { ClawMarkIcon } from "./ClawIcons";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Background image with overlays */}
