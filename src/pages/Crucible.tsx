@@ -78,8 +78,7 @@ const Crucible = () => {
   }, [navigate]);
 
   const handleEngage = useCallback(() => {
-    // Future: navigate to battle arena
-    navigate("/");
+    navigate("/battle");
   }, [navigate]);
 
   // Liquid sloshing transform based on progress
