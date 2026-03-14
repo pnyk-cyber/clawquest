@@ -22,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/crucible" element={<Crucible />} />
+          <Route path="/battle" element={<BattleArena />} />
           <Route path="/neural-link" element={<NeuralLink />} />
           <Route path="/registry" element={<Registry />} />
           <Route path="/containment/:beastId" element={<ContainmentCell />} />
