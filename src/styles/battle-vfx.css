@@ -1,0 +1,581 @@
+/* ============================================
+   BATTLE VFX — Attack-specific visual effects
+   ============================================ */
+
+/* --- Chromatic Aberration Flash (Slash Protocol) --- */
+@keyframes chromatic-flash {
+  0% { filter: none; }
+  15% { filter: blur(1px); }
+  30% { filter: none; text-shadow: -3px 0 hsl(var(--neon-claw)/0.8), 3px 0 hsl(var(--glitch-cyan)/0.8); }
+  50% { filter: none; text-shadow: 2px 0 hsl(var(--neon-claw)/0.6), -2px 0 hsl(var(--glitch-cyan)/0.6); }
+  100% { filter: none; text-shadow: none; }
+}
+
+.vfx-slash-protocol {
+  animation: chromatic-flash 0.5s ease-out;
+}
+
+/* Claw trail particles */
+@keyframes claw-trail {
+  0% { opacity: 1; transform: scaleX(1) translateX(0); }
+  100% { opacity: 0; transform: scaleX(2.5) translateX(20px); }
+}
+
+.claw-trail-particle {
+  position: absolute;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--neon-claw)), transparent);
+  animation: claw-trail 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Hydraulic Maul Impact Rings --- */
+@keyframes impact-ring {
+  0% { transform: scale(0); opacity: 0.8; border-width: 3px; }
+  100% { transform: scale(4); opacity: 0; border-width: 1px; }
+}
+
+.vfx-hydraulic-maul .impact-ring {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 3px solid hsl(var(--rust-gold));
+  border-radius: 0;
+  animation: impact-ring 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Heavy screen shake */
+@keyframes heavy-shake {
+  0%, 100% { transform: translate(0); }
+  10% { transform: translate(-6px, 4px); }
+  20% { transform: translate(6px, -5px); }
+  30% { transform: translate(-5px, -3px); }
+  40% { transform: translate(5px, 5px); }
+  50% { transform: translate(-3px, -2px); }
+  60% { transform: translate(3px, 2px); }
+  70% { transform: translate(-2px, 3px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+.vfx-heavy-shake {
+  animation: heavy-shake 0.5s ease-out;
+}
+
+/* --- Tail Whip Motion Blur --- */
+@keyframes whip-blur {
+  0% { filter: blur(0); transform: rotate(0deg); }
+  30% { filter: blur(2px); transform: rotate(-5deg); }
+  60% { filter: blur(4px); transform: rotate(10deg); }
+  100% { filter: blur(0); transform: rotate(0deg); }
+}
+
+.vfx-tail-whip {
+  animation: whip-blur 0.35s ease-out;
+}
+
+/* --- Rust Infection Overlay --- */
+@keyframes rust-spread {
+  0% { opacity: 0; background-size: 0%; }
+  50% { opacity: 0.4; }
+  100% { opacity: 0.15; background-size: 100%; }
+}
+
+.vfx-rust-infection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, hsl(var(--rust-gold)/0.4) 0%, transparent 70%);
+  animation: rust-spread 1.2s ease-out forwards;
+}
+
+/* --- Welding Torch Beam --- */
+@keyframes torch-beam {
+  0% { width: 0; opacity: 1; }
+  40% { width: 100%; opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+
+.vfx-welding-torch-beam {
+  position: absolute;
+  height: 4px;
+  left: 0;
+  background: linear-gradient(90deg,
+    hsl(0 0% 100% / 0.9),
+    hsl(var(--rust-gold)),
+    hsl(var(--neon-claw) / 0.6));
+  box-shadow: 0 0 12px hsl(0 0% 100% / 0.6), 0 0 24px hsl(var(--rust-gold) / 0.4);
+  animation: torch-beam 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Prismatic Refraction --- */
+@keyframes prismatic-split {
+  0% { opacity: 0; transform: scaleX(0); filter: hue-rotate(0deg); }
+  30% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.5); filter: hue-rotate(360deg); }
+}
+
+.vfx-prismatic-ray {
+  position: absolute;
+  height: 2px;
+  width: 80%;
+  left: 10%;
+  background: linear-gradient(90deg,
+    hsl(var(--neon-claw)),
+    hsl(var(--rust-gold)),
+    hsl(var(--toxic-shard)),
+    hsl(var(--glitch-cyan)));
+  animation: prismatic-split 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Shard Storm Spin --- */
+@keyframes shard-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(360deg) scale(1.1); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+
+.vfx-shard-storm {
+  animation: shard-spin 0.6s ease-in-out;
+}
+
+/* --- Null Cascade Phase --- */
+@keyframes phase-out {
+  0% { opacity: 1; filter: none; }
+  30% { opacity: 0.3; filter: hue-rotate(180deg) blur(2px); }
+  60% { opacity: 0; }
+  80% { opacity: 0; }
+  90% { opacity: 0.5; filter: hue-rotate(0deg); }
+  100% { opacity: 1; filter: none; }
+}
+
+.vfx-null-cascade {
+  animation: phase-out 1s ease-in-out;
+}
+
+/* Reality tear */
+@keyframes reality-tear {
+  0% { clip-path: inset(0 0 100% 0); opacity: 1; }
+  20% { clip-path: inset(0 0 40% 0); }
+  40% { clip-path: inset(30% 0 30% 0); }
+  60% { clip-path: inset(50% 0 0 0); }
+  80% { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); opacity: 0; }
+}
+
+.vfx-reality-tear {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    hsl(var(--glitch-cyan) / 0.15) 48%,
+    hsl(var(--glitch-cyan) / 0.6) 49.5%,
+    hsl(0 0% 100% / 0.8) 50%,
+    hsl(var(--glitch-cyan) / 0.6) 50.5%,
+    hsl(var(--glitch-cyan) / 0.15) 52%,
+    transparent 100%);
+  animation: reality-tear 0.8s ease-out forwards;
+}
+
+/* Color inversion on victim */
+@keyframes color-invert {
+  0% { filter: invert(1) hue-rotate(180deg); }
+  100% { filter: none; }
+}
+
+.vfx-color-invert {
+  animation: color-invert 0.8s ease-out forwards;
+}
+
+/* --- Glitch Echo Copies --- */
+@keyframes echo-desync {
+  0%, 100% { transform: translate(0) skewX(0); opacity: 0.6; }
+  25% { transform: translate(-8px, -4px) skewX(-2deg); opacity: 0.4; }
+  50% { transform: translate(6px, 3px) skewX(3deg); opacity: 0.7; }
+  75% { transform: translate(-4px, 5px) skewX(-1deg); opacity: 0.3; }
+}
+
+.vfx-glitch-copy {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: echo-desync 0.6s ease-in-out;
+  mix-blend-mode: screen;
+}
+
+.vfx-glitch-copy:nth-child(1) { filter: hue-rotate(120deg); animation-delay: 0.05s; }
+.vfx-glitch-copy:nth-child(2) { filter: hue-rotate(240deg); animation-delay: 0.1s; }
+
+/* --- Berserk Overdrive Flash --- */
+@keyframes berserk-red-flash {
+  0%, 30%, 60%, 100% { background: transparent; }
+  10%, 40%, 70% { background: hsl(var(--neon-claw) / 0.2); }
+}
+
+.vfx-berserk-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+  animation: berserk-red-flash 0.6s ease-out forwards;
+}
+
+/* Beast scale up on berserk */
+@keyframes beast-scale-berserk {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1.15); }
+}
+
+.vfx-beast-berserk {
+  animation: beast-scale-berserk 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Pulsing veins overlay */
+@keyframes vein-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+
+.vfx-vein-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 30% 40%, hsl(var(--neon-claw) / 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 70% 60%, hsl(var(--neon-claw) / 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 50% 80%, hsl(var(--neon-claw) / 0.3) 0%, transparent 50%);
+  animation: vein-pulse 0.5s ease-in-out infinite;
+}
+
+/* --- Disconnect Forfeit --- */
+@keyframes screen-tear-horizontal {
+  0% { clip-path: inset(0 0 0 0); }
+  20% { clip-path: inset(0 0 0 0); }
+  25% { clip-path: polygon(0 0, 100% 0, 100% 45%, 0 48%); }
+  30% { clip-path: polygon(0 52%, 100% 48%, 100% 100%, 0 100%); }
+  50% { clip-path: polygon(0 0, 100% 0, 100% 45%, 0 48%); }
+  60% { clip-path: polygon(0 0, 100% 0, 100% 42%, 0 55%); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+.vfx-disconnect-tear {
+  animation: screen-tear-horizontal 1.2s ease-in-out;
+}
+
+/* DISCONNECTED stamp */
+@keyframes stamp-slam {
+  0% { transform: scale(5) rotate(-12deg); opacity: 0; }
+  40% { transform: scale(1) rotate(-8deg); opacity: 1; }
+  45% { transform: scale(1.05) rotate(-8deg); }
+  100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+}
+
+.vfx-disconnect-stamp {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.vfx-disconnect-stamp span {
+  font-family: 'Permanent Marker', cursive;
+  font-size: clamp(2rem, 8vw, 5rem);
+  color: hsl(var(--neon-claw));
+  text-shadow: 0 0 20px hsl(var(--neon-claw) / 0.6), 0 0 40px hsl(var(--neon-claw) / 0.3);
+  border: 4px solid hsl(var(--neon-claw));
+  padding: 0.3em 0.8em;
+  animation: stamp-slam 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Cable unplug sparks */
+@keyframes cable-spark {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(30px) scale(0.3); }
+}
+
+.vfx-cable-spark {
+  width: 4px;
+  height: 4px;
+  background: hsl(var(--rust-gold));
+  position: absolute;
+  animation: cable-spark 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Guardian Counter Shield --- */
+@keyframes shield-spin {
+  0% { transform: rotate(0deg) scale(0); opacity: 0; }
+  40% { transform: rotate(180deg) scale(1); opacity: 0.8; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.4; }
+}
+
+.vfx-guardian-shield {
+  position: absolute;
+  inset: -10px;
+  pointer-events: none;
+  border: 2px solid hsl(var(--toxic-shard) / 0.6);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: shield-spin 0.8s ease-out forwards;
+  box-shadow: inset 0 0 20px hsl(var(--toxic-shard) / 0.2);
+}
+
+/* --- Taunt Broadcast --- */
+@keyframes taunt-text-explode {
+  0% { transform: scale(0) rotate(-5deg); opacity: 0; }
+  40% { transform: scale(1.2) rotate(2deg); opacity: 1; }
+  60% { transform: scale(0.95) rotate(-1deg); }
+  80% { transform: scale(1.05) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+}
+
+@keyframes taunt-fade {
+  0%, 80% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+.vfx-taunt-text {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 45;
+}
+
+.vfx-taunt-text span {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  font-weight: 700;
+  color: hsl(var(--glitch-cyan));
+  text-shadow: 0 0 15px hsl(var(--glitch-cyan) / 0.5), 0 0 30px hsl(var(--glitch-cyan) / 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  animation: taunt-text-explode 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
+             taunt-fade 2s ease-out 0.6s forwards;
+}
+
+/* --- Precision Strike Slow-Mo --- */
+@keyframes slow-mo-vignette {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.vfx-slow-mo {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background: radial-gradient(ellipse at center, transparent 30%, hsl(var(--neon-claw) / 0.15) 100%);
+  animation: slow-mo-vignette 1s ease-in-out forwards;
+}
+
+/* White-hot glow on claws */
+@keyframes white-hot {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(3) saturate(0); }
+  100% { filter: brightness(1); }
+}
+
+.vfx-white-hot {
+  animation: white-hot 0.5s ease-out;
+}
+
+/* --- Ambush Protocol Ragdoll --- */
+@keyframes fake-death {
+  0% { transform: rotate(0deg) translateY(0); }
+  30% { transform: rotate(15deg) translateY(10px); opacity: 0.6; }
+  60% { transform: rotate(20deg) translateY(15px); opacity: 0.4; }
+  70% { transform: rotate(0deg) translateY(0); opacity: 1; }
+  80% { transform: rotate(0deg) translateY(-15px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+.vfx-fake-death {
+  animation: fake-death 1.2s ease-in-out;
+}
+
+/* Ground crack */
+@keyframes ground-crack {
+  0% { opacity: 0; transform: scaleX(0); }
+  40% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0.3; transform: scaleX(1); }
+}
+
+.vfx-ground-crack {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent,
+    hsl(var(--rust-gold) / 0.8),
+    hsl(0 0% 100% / 0.5),
+    hsl(var(--rust-gold) / 0.8),
+    transparent);
+  animation: ground-crack 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Style Overdrive Backflip --- */
+@keyframes showboat-flip {
+  0% { transform: rotateX(0deg) scale(1); }
+  25% { transform: rotateX(90deg) scale(1.1); }
+  50% { transform: rotateX(180deg) scale(1.15); }
+  75% { transform: rotateX(270deg) scale(1.1); }
+  100% { transform: rotateX(360deg) scale(1); }
+}
+
+.vfx-showboat {
+  animation: showboat-flip 0.8s ease-in-out;
+  perspective: 600px;
+}
+
+/* Sparkle trail */
+@keyframes sparkle {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0) translateY(-20px); }
+}
+
+.vfx-sparkle {
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--glitch-cyan));
+  position: absolute;
+  animation: sparkle 0.6s ease-out forwards;
+  pointer-events: none;
+  box-shadow: 0 0 8px hsl(var(--glitch-cyan) / 0.6);
+}
+
+/* --- Void Surge White Flash --- */
+@keyframes arena-white-flash {
+  0% { background: transparent; }
+  20% { background: hsl(0 0% 100% / 0.6); }
+  40% { background: transparent; }
+  50% { background: hsl(0 0% 100% / 0.3); }
+  100% { background: transparent; }
+}
+
+.vfx-void-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+  animation: arena-white-flash 0.8s ease-out forwards;
+}
+
+/* --- Critical Hit Slow-Mo Red Vignette --- */
+@keyframes crit-vignette {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.vfx-crit-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background: radial-gradient(ellipse at center, transparent 30%, hsl(var(--neon-claw) / 0.3) 100%);
+  animation: crit-vignette 0.6s ease-out forwards;
+}
+
+/* --- Damage Numbers --- */
+@keyframes damage-number-pop {
+  0% { opacity: 0; transform: translateY(0) scale(3); }
+  30% { opacity: 1; transform: translateY(-10px) scale(1); }
+  60% { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+.vfx-damage-number {
+  position: absolute;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  pointer-events: none;
+  animation: damage-number-pop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  text-shadow: 0 0 10px currentColor;
+  z-index: 30;
+}
+
+.vfx-damage-number.crit {
+  font-size: 2.5rem;
+  color: hsl(var(--rust-gold));
+}
+
+.vfx-damage-number.normal {
+  color: hsl(var(--neon-claw));
+}
+
+.vfx-damage-number.heal {
+  color: hsl(var(--toxic-shard));
+}
+
+/* --- Move Name Flash --- */
+@keyframes move-name-flash {
+  0% { opacity: 0; transform: translateX(-20px); letter-spacing: 0.5em; }
+  30% { opacity: 1; transform: translateX(0); letter-spacing: 0.15em; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.vfx-move-name {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  pointer-events: none;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1rem, 3vw, 1.8rem);
+  text-transform: uppercase;
+  animation: move-name-flash 1.2s ease-out forwards;
+  white-space: nowrap;
+}
+
+/* --- Static Noise Overlay --- */
+@keyframes static-noise {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+.vfx-static-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 44;
+  opacity: 0.15;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: static-noise 0.1s steps(4) infinite;
+}
+
+/* --- Scanline Tear --- */
+@keyframes scanline-tear {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-5px); }
+  30% { transform: translateX(8px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(5px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+.vfx-scanline-tear {
+  animation: scanline-tear 0.3s steps(2) forwards;
+}

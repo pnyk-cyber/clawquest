@@ -5,5 +5,6 @@ import "./styles/crucible.css";
 import "./styles/neural-link.css";
 import "./styles/containment.css";
 import "./styles/battle.css";
+import "./styles/battle-vfx.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
