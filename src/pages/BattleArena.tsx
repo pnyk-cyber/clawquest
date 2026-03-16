@@ -14,11 +14,22 @@ import {
   SPECTATOR_REACTIONS,
   getRandomItem,
 } from "@/data/battleCommentary";
+import {
+  type BattleMove,
+  CORE_MOVES,
+  BIOME_MOVES,
+  PERSONALITY_MOVES,
+  matchImprovCommand,
+  getMoveCommentary,
+  calculateDamage,
+  getAvailableMoves,
+} from "@/data/moveSystem";
 
+// ---- Types ----
 interface LogEntry {
   id: number;
   text: string;
-  type: "system" | "player" | "opponent" | "damage" | "critical" | "commentary" | "announcer";
+  type: "system" | "player" | "opponent" | "damage" | "critical" | "commentary" | "announcer" | "move_name";
   timestamp: string;
 }
 
@@ -29,18 +40,30 @@ interface ChatMessage {
   color: string;
 }
 
+interface DamagePopup {
+  id: number;
+  value: number;
+  isCrit: boolean;
+  isHeal: boolean;
+  side: "player" | "opponent";
+}
+
+interface ActiveVfx {
+  id: number;
+  type: string;
+  duration: number;
+}
+
+// ---- Constants ----
 const VIEWER_COLORS = [
   "text-neon-claw", "text-glitch-cyan", "text-toxic-shard", "text-rust-gold",
   "text-foreground", "text-muted-foreground",
 ];
 
-const OPPONENT_MOVES = [
-  "PRISMA DANCER uses REFRACTION SLASH",
-  "PRISMA DANCER uses CRYSTAL BARRAGE",
-  "PRISMA DANCER uses MIRROR COUNTER",
-  "PRISMA DANCER uses PRISMATIC BEAM",
-  "PRISMA DANCER uses SPEED BLITZ",
-];
+const PLAYER_PERSONALITY = "aggressive";
+const OPPONENT_PERSONALITY = "calculated";
+const PLAYER_BIOME: "scrap" | "crystal" | "void" = "scrap";
+const OPPONENT_BIOME: "scrap" | "crystal" | "void" = "crystal";
 
 const getTimestamp = (seconds: number) => {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -48,8 +71,11 @@ const getTimestamp = (seconds: number) => {
   return `${m}:${s}`;
 };
 
+// ---- Component ----
 const BattleArena = () => {
   const navigate = useNavigate();
+
+  // Core state
   const [playerHp, setPlayerHp] = useState(100);
   const [opponentHp, setOpponentHp] = useState(100);
   const [rage, setRage] = useState(0);
@@ -58,11 +84,28 @@ const BattleArena = () => {
   const [command, setCommand] = useState("");
   const [log, setLog] = useState<LogEntry[]>([]);
   const [timer, setTimer] = useState(0);
+
+  // VFX state
   const [playerDamageFlash, setPlayerDamageFlash] = useState(false);
   const [opponentDamageFlash, setOpponentDamageFlash] = useState(false);
   const [shaking, setShaking] = useState(false);
+  const [heavyShake, setHeavyShake] = useState(false);
   const [sloshing, setSloshing] = useState(false);
   const [berserk, setBerserk] = useState(false);
+  const [damagePopups, setDamagePopups] = useState<DamagePopup[]>([]);
+  const [activeVfx, setActiveVfx] = useState<ActiveVfx[]>([]);
+  const [moveNameFlash, setMoveNameFlash] = useState<{ text: string; color: string } | null>(null);
+  const [showDisconnectStamp, setShowDisconnectStamp] = useState(false);
+  const [showTauntText, setShowTauntText] = useState<string | null>(null);
+  const [playerBeastVfx, setPlayerBeastVfx] = useState("");
+  const [opponentBeastVfx, setOpponentBeastVfx] = useState("");
+  const [showRealityTear, setShowRealityTear] = useState(false);
+  const [showStaticOverlay, setShowStaticOverlay] = useState(false);
+  const [showGuardianShield, setShowGuardianShield] = useState(false);
+  const [guardianCounterActive, setGuardianCounterActive] = useState(false);
+  const [playerBerserkScale, setPlayerBerserkScale] = useState(false);
+
+  // Battle state
   const [battleOver, setBattleOver] = useState(false);
   const [winner, setWinner] = useState<"player" | "opponent" | null>(null);
   const [showPotIntro, setShowPotIntro] = useState(true);
@@ -70,17 +113,22 @@ const BattleArena = () => {
   const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 800) + 200);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [showMoveSelect, setShowMoveSelect] = useState(false);
+  const [opponentStunned, setOpponentStunned] = useState(0);
 
+  // Refs
   const logRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(0);
   const chatId = useRef(0);
+  const popupId = useRef(0);
+  const vfxId = useRef(0);
 
-  const playerPersonality = PERSONALITIES.aggressive;
-  const opponentPersonality = PERSONALITIES.calculated;
+  const playerPersonality = PERSONALITIES[PLAYER_PERSONALITY];
+  const opponentPersonality = PERSONALITIES[OPPONENT_PERSONALITY];
 
-  // --- Helpers ---
+  // ---- Helpers ----
   const addLog = useCallback((text: string, type: LogEntry["type"]) => {
     setTimer((t) => {
       const entry: LogEntry = { id: nextId.current++, text, type, timestamp: getTimestamp(t) };
@@ -103,7 +151,123 @@ const BattleArena = () => {
     addChat(getRandomItem(SPECTATOR_NAMES), msg);
   }, [addChat]);
 
-  // --- Pre-battle intro sequence ---
+  const addDamagePopup = useCallback((value: number, isCrit: boolean, isHeal: boolean, side: "player" | "opponent") => {
+    const id = popupId.current++;
+    setDamagePopups((prev) => [...prev, { id, value, isCrit, isHeal, side }]);
+    setTimeout(() => setDamagePopups((prev) => prev.filter((p) => p.id !== id)), 900);
+  }, []);
+
+  const triggerVfx = useCallback((type: string, duration: number) => {
+    const id = vfxId.current++;
+    setActiveVfx((prev) => [...prev, { id, type, duration }]);
+    setTimeout(() => setActiveVfx((prev) => prev.filter((v) => v.id !== id)), duration);
+  }, []);
+
+  const showMoveName = useCallback((name: string, color: string) => {
+    setMoveNameFlash({ text: name, color });
+    setTimeout(() => setMoveNameFlash(null), 1200);
+  }, []);
+
+  // ---- Move VFX triggers ----
+  const triggerMoveVfx = useCallback((move: BattleMove, isPlayer: boolean) => {
+    const setVfx = isPlayer ? setPlayerBeastVfx : setOpponentBeastVfx;
+
+    switch (move.id) {
+      case 'slash_protocol':
+        showMoveName(move.name, "hsl(var(--neon-claw))");
+        triggerVfx('chromatic-flash', 500);
+        break;
+      case 'hydraulic_maul':
+        showMoveName(move.name, "hsl(var(--rust-gold))");
+        setHeavyShake(true);
+        setTimeout(() => setHeavyShake(false), 500);
+        break;
+      case 'tail_whip':
+        showMoveName(move.name, "hsl(var(--toxic-shard))");
+        setVfx('vfx-tail-whip');
+        setTimeout(() => setVfx(''), 350);
+        break;
+      case 'rust_shrapnel':
+        showMoveName(move.name, "hsl(var(--rust-gold))");
+        setShaking(true);
+        setTimeout(() => setShaking(false), 400);
+        break;
+      case 'welding_torch':
+        showMoveName(move.name, "hsl(var(--rust-gold))");
+        triggerVfx('torch-beam', 800);
+        break;
+      case 'prismatic_lance':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        triggerVfx('prismatic-ray', 600);
+        break;
+      case 'shard_storm':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        setVfx('vfx-shard-storm');
+        setTimeout(() => setVfx(''), 600);
+        break;
+      case 'null_cascade':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        setVfx('vfx-null-cascade');
+        setShowRealityTear(true);
+        setShowStaticOverlay(true);
+        setTimeout(() => { setVfx(''); setShowRealityTear(false); }, 1000);
+        setTimeout(() => setShowStaticOverlay(false), 1500);
+        // Color invert victim
+        const victimSet = isPlayer ? setOpponentBeastVfx : setPlayerBeastVfx;
+        victimSet('vfx-color-invert');
+        setTimeout(() => victimSet(''), 800);
+        break;
+      case 'glitch_echo':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        setShowStaticOverlay(true);
+        setTimeout(() => setShowStaticOverlay(false), 800);
+        break;
+      case 'berserk_overdrive':
+        showMoveName(move.name, "hsl(var(--neon-claw))");
+        triggerVfx('berserk-flash', 600);
+        setPlayerBerserkScale(true);
+        break;
+      case 'disconnect_forfeit':
+        showMoveName("D I S C O N N E C T E D", "hsl(var(--neon-claw))");
+        setShowDisconnectStamp(true);
+        break;
+      case 'guardian_counter':
+        showMoveName(move.name, "hsl(var(--toxic-shard))");
+        setShowGuardianShield(true);
+        setGuardianCounterActive(true);
+        setTimeout(() => setShowGuardianShield(false), 2000);
+        break;
+      case 'taunt_broadcast':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        setShowTauntText(getRandomItem(move.attackerLines[PLAYER_PERSONALITY] || move.attackerLines['aggressive'] || ['...']));
+        setTimeout(() => setShowTauntText(null), 2500);
+        break;
+      case 'precision_strike':
+        showMoveName(move.name, "hsl(var(--neon-claw))");
+        triggerVfx('slow-mo', 1000);
+        break;
+      case 'ambush_protocol':
+        showMoveName(move.name, "hsl(var(--rust-gold))");
+        setVfx('vfx-fake-death');
+        setTimeout(() => setVfx(''), 1200);
+        break;
+      case 'style_overdrive':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        setVfx('vfx-showboat');
+        setTimeout(() => setVfx(''), 800);
+        break;
+      case 'void_surge':
+        showMoveName(move.name, "hsl(var(--glitch-cyan))");
+        triggerVfx('void-flash', 800);
+        setShowStaticOverlay(true);
+        setTimeout(() => setShowStaticOverlay(false), 1200);
+        break;
+      default:
+        showMoveName(move.name, "hsl(var(--neon-claw))");
+    }
+  }, [showMoveName, triggerVfx]);
+
+  // ---- Pre-battle intro ----
   useEffect(() => {
     if (!showPotIntro) return;
     const seq = [
@@ -132,12 +296,10 @@ const BattleArena = () => {
   useEffect(() => { logRef.current && (logRef.current.scrollTop = logRef.current.scrollHeight); }, [log]);
   useEffect(() => { chatRef.current && (chatRef.current.scrollTop = chatRef.current.scrollHeight); }, [chatMessages]);
 
-  // Fluctuate viewer count
+  // Viewer count fluctuation
   useEffect(() => {
     if (battleOver) return;
-    const i = setInterval(() => {
-      setViewerCount((v) => Math.max(50, v + Math.floor(Math.random() * 40) - 18));
-    }, 3000);
+    const i = setInterval(() => setViewerCount((v) => Math.max(50, v + Math.floor(Math.random() * 40) - 18)), 3000);
     return () => clearInterval(i);
   }, [battleOver]);
 
@@ -150,7 +312,7 @@ const BattleArena = () => {
     return () => clearInterval(i);
   }, [battleOver, showPotIntro, addSpectatorReaction]);
 
-  // Grow pot randomly
+  // Grow pot
   useEffect(() => {
     if (battleOver || showPotIntro) return;
     const i = setInterval(() => {
@@ -161,7 +323,7 @@ const BattleArena = () => {
     return () => clearInterval(i);
   }, [battleOver, showPotIntro, addSpectatorReaction]);
 
-  // Win/loss
+  // Win/loss check
   useEffect(() => {
     if (playerHp <= 0 && !battleOver) {
       setBattleOver(true);
@@ -170,7 +332,7 @@ const BattleArena = () => {
       addLog(`PRISMA DANCER CLAIMS ${pot} $CLAW`, "critical");
       addLog(getRandomItem(opponentPersonality.react_winning), "commentary");
       addLog(getRandomItem(playerPersonality.react_losing), "commentary");
-      setTimeout(() => { addSpectatorReaction("defeat"); addSpectatorReaction("defeat"); addSpectatorReaction("general"); }, 500);
+      setTimeout(() => { addSpectatorReaction("defeat"); addSpectatorReaction("defeat"); }, 500);
     } else if (opponentHp <= 0 && !battleOver) {
       setBattleOver(true);
       setWinner("player");
@@ -178,11 +340,11 @@ const BattleArena = () => {
       addLog(`IRON MAW CLAIMS ${pot} $CLAW`, "critical");
       addLog(getRandomItem(playerPersonality.react_winning), "commentary");
       addLog(getRandomItem(opponentPersonality.react_losing), "commentary");
-      setTimeout(() => { addSpectatorReaction("victory"); addSpectatorReaction("victory"); addSpectatorReaction("general"); }, 500);
+      setTimeout(() => { addSpectatorReaction("victory"); addSpectatorReaction("victory"); }, 500);
     }
   }, [playerHp, opponentHp, battleOver]);
 
-  // Berserk
+  // Berserk threshold
   useEffect(() => {
     if (rage >= 90 && !berserk) {
       setBerserk(true);
@@ -193,88 +355,248 @@ const BattleArena = () => {
     }
   }, [rage, berserk]);
 
-  const triggerPlayerDamage = useCallback((dmg: number) => {
+  // ---- Damage helpers ----
+  const triggerPlayerDamage = useCallback((dmg: number, isCrit: boolean) => {
+    // If guardian counter is active, reflect 50%
+    if (guardianCounterActive) {
+      const reflected = Math.round(dmg * 0.5);
+      setGuardianCounterActive(false);
+      setShowGuardianShield(false);
+      addLog(`/// GUARDIAN COUNTER — ${reflected} DAMAGE REFLECTED`, "critical");
+      addDamagePopup(reflected, false, false, "opponent");
+      setOpponentHp((hp) => Math.max(0, hp - reflected));
+      dmg = Math.round(dmg * 0.5); // reduced incoming
+      addSpectatorReaction("opponent_hit");
+    }
+
     setPlayerHp((hp) => Math.max(0, hp - dmg));
     setPlayerDamageFlash(true);
     setShaking(true);
     setSloshing(true);
     setRage((r) => Math.min(100, r + Math.floor(dmg / 2)));
+    addDamagePopup(dmg, isCrit, false, "player");
+    if (isCrit) triggerVfx('crit-vignette', 600);
     setTimeout(() => setPlayerDamageFlash(false), 300);
     setTimeout(() => setShaking(false), 400);
     setTimeout(() => setSloshing(false), 1200);
-  }, []);
+  }, [guardianCounterActive, addDamagePopup, triggerVfx, addLog, addSpectatorReaction]);
 
-  const triggerOpponentDamage = useCallback((dmg: number) => {
+  const triggerOpponentDamage = useCallback((dmg: number, isCrit: boolean) => {
     setOpponentHp((hp) => Math.max(0, hp - dmg));
     setOpponentDamageFlash(true);
     setSloshing(true);
+    addDamagePopup(dmg, isCrit, false, "opponent");
+    if (isCrit) triggerVfx('crit-vignette', 600);
     setTimeout(() => setOpponentDamageFlash(false), 300);
     setTimeout(() => setSloshing(false), 1200);
-  }, []);
+  }, [addDamagePopup, triggerVfx]);
 
+  // ---- Execute a move ----
+  const executePlayerMove = useCallback((move: BattleMove) => {
+    setTurnActive(false);
+    setShowMoveSelect(false);
+
+    // Special: Disconnect Forfeit
+    if (move.id === 'disconnect_forfeit') {
+      addLog(move.windupText, "system");
+      triggerMoveVfx(move, true);
+      setTimeout(() => {
+        addLog(move.impactText, "critical");
+        addLog(getMoveCommentary(move, 'attacker', PLAYER_PERSONALITY), "commentary");
+        addLog(getRandomItem(move.announcerLines), "announcer");
+        move.spectatorReactions.forEach((r) => addChat(getRandomItem(SPECTATOR_NAMES), r));
+        setBattleOver(true);
+        setWinner("opponent");
+        addLog(`PRISMA DANCER CLAIMS ${pot} $CLAW BY RAGE QUIT`, "critical");
+      }, 1500);
+      return;
+    }
+
+    // Special: Style Overdrive (no damage)
+    if (move.id === 'style_overdrive') {
+      addLog(move.windupText, "system");
+      triggerMoveVfx(move, true);
+      setTimeout(() => {
+        addLog(move.impactText, "move_name");
+        addLog(getMoveCommentary(move, 'attacker', PLAYER_PERSONALITY), "commentary");
+        addLog(getRandomItem(move.announcerLines), "announcer");
+        // Hype explosion
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => addChat(getRandomItem(SPECTATOR_NAMES), getRandomItem(move.spectatorReactions)), i * 200);
+        }
+        setPot((p) => p + Math.floor(Math.random() * 100) + 50);
+        setRage((r) => Math.max(0, r - 20));
+        // Opponent turn
+        setTimeout(() => executeOpponentTurn(), 800);
+      }, 600);
+      return;
+    }
+
+    // Special: Guardian Counter (buff, no immediate damage)
+    if (move.id === 'guardian_counter') {
+      addLog(move.windupText, "system");
+      triggerMoveVfx(move, true);
+      setTimeout(() => {
+        addLog(move.impactText, "move_name");
+        addLog(getMoveCommentary(move, 'attacker', PLAYER_PERSONALITY), "commentary");
+        addLog("/// NEXT INCOMING ATTACK WILL BE REFLECTED 50%", "system");
+        addLog(getRandomItem(move.announcerLines), "announcer");
+        addChat(getRandomItem(SPECTATOR_NAMES), getRandomItem(move.spectatorReactions));
+        setTimeout(() => executeOpponentTurn(), 600);
+      }, 500);
+      return;
+    }
+
+    // Standard damage moves
+    const { damage, isCrit, selfDamage } = calculateDamage(move, berserk);
+
+    // Windup
+    addLog(move.windupText, "system");
+
+    setTimeout(() => {
+      // VFX
+      triggerMoveVfx(move, true);
+
+      setTimeout(() => {
+        // Impact
+        addLog(`${move.impactText} — ${damage} DAMAGE${isCrit ? " [CRITICAL]" : ""}`, isCrit ? "critical" : "damage");
+        triggerOpponentDamage(damage, isCrit);
+
+        // Attacker commentary
+        addLog(getMoveCommentary(move, 'attacker', PLAYER_PERSONALITY), "commentary");
+
+        // Spectator reaction
+        addChat(getRandomItem(SPECTATOR_NAMES), getRandomItem(move.spectatorReactions));
+        if (isCrit || damage > 25) {
+          addSpectatorReaction("big_damage", { dmg: String(damage) });
+          addLog(getRandomItem(move.announcerLines), "announcer");
+        }
+
+        // Self-damage (berserk moves)
+        if (selfDamage > 0) {
+          setTimeout(() => {
+            addLog(`/// SELF-DAMAGE: ${selfDamage} HP (OVERDRIVE COST)`, "critical");
+            setPlayerHp((hp) => Math.max(1, hp - selfDamage));
+            addDamagePopup(selfDamage, false, false, "player");
+          }, 300);
+        }
+
+        // Rage adjustment
+        if (move.effect.rageChange) {
+          setRage((r) => Math.max(0, Math.min(100, r + move.effect.rageChange!)));
+        }
+
+        // Taunt broadcast stun
+        if (move.id === 'taunt_broadcast') {
+          setOpponentStunned((s) => s + 1);
+        }
+
+        // Void surge random effect
+        if (move.id === 'void_surge') {
+          const outcomes = ['heal_self', 'damage_both', 'big_damage'];
+          const outcome = getRandomItem(outcomes);
+          setTimeout(() => {
+            if (outcome === 'heal_self') {
+              const heal = Math.floor(Math.random() * 20) + 10;
+              addLog(`/// VOID SURGE OUTCOME: SELF-HEAL +${heal} HP`, "system");
+              setPlayerHp((hp) => Math.min(100, hp + heal));
+              addDamagePopup(heal, false, true, "player");
+            } else if (outcome === 'damage_both') {
+              const bothDmg = Math.floor(Math.random() * 15) + 5;
+              addLog(`/// VOID SURGE OUTCOME: BOTH DAMAGED ${bothDmg} HP`, "system");
+              setPlayerHp((hp) => Math.max(1, hp - bothDmg));
+              setOpponentHp((hp) => Math.max(0, hp - bothDmg));
+              addDamagePopup(bothDmg, false, false, "player");
+              addDamagePopup(bothDmg, false, false, "opponent");
+            } else {
+              const extra = Math.floor(Math.random() * 25) + 15;
+              addLog(`/// VOID SURGE OUTCOME: EXTRA ${extra} DAMAGE TO OPPONENT`, "critical");
+              triggerOpponentDamage(extra, true);
+            }
+            addChat(getRandomItem(SPECTATOR_NAMES), "WHAT JUST HAPPENED");
+          }, 500);
+        }
+
+        // Opponent turn
+        setTimeout(() => {
+          if (opponentHp - damage <= 0) return;
+          executeOpponentTurn();
+        }, 800);
+      }, 200);
+    }, 300);
+  }, [berserk, opponentHp, pot, addLog, triggerOpponentDamage, triggerMoveVfx, addChat, addSpectatorReaction, addDamagePopup]);
+
+  // ---- Opponent turn ----
+  const executeOpponentTurn = useCallback(() => {
+    if (opponentStunned > 0) {
+      setOpponentStunned((s) => s - 1);
+      addLog("/// OPPONENT STUNNED — SKIPPING TURN", "system");
+      addLog(getRandomItem(ANNOUNCER_LINES.round_start).replace("{round}", String(round + 1)), "announcer");
+      setRound((r) => r + 1);
+      setTurnActive(true);
+      inputRef.current?.focus();
+      return;
+    }
+
+    const oppMoves = getAvailableMoves(OPPONENT_BIOME, OPPONENT_PERSONALITY, 30);
+    const oppMove = getRandomItem(oppMoves.filter(m => m.category !== 'personality'));
+    const { damage: oppDmg, isCrit: oppCrit } = calculateDamage(oppMove, false);
+
+    addLog(`PRISMA DANCER uses ${oppMove.name}`, "opponent");
+
+    setTimeout(() => {
+      addLog(`${oppMove.name} — ${oppDmg} DAMAGE${oppCrit ? " [CRITICAL]" : ""}`, oppCrit ? "critical" : "damage");
+      triggerPlayerDamage(oppDmg, oppCrit);
+
+      // Victim commentary (player reacting to being hit)
+      addLog(getMoveCommentary(oppMove, 'victim', PLAYER_PERSONALITY), "commentary");
+      // Attacker commentary (opponent)
+      addLog(getMoveCommentary(oppMove, 'attacker', OPPONENT_PERSONALITY), "commentary");
+      addSpectatorReaction("player_hit");
+
+      setTimeout(() => {
+        const newPlayerHp = playerHp - oppDmg;
+        if (newPlayerHp < 30 && newPlayerHp > 0) {
+          addLog(getRandomItem(ANNOUNCER_LINES.low_hp).replace("{name}", "IRON MAW"), "announcer");
+          addLog(getRandomItem(playerPersonality.react_low_hp), "commentary");
+        }
+
+        setRound((r) => r + 1);
+        addLog(getRandomItem(ANNOUNCER_LINES.round_start).replace("{round}", String(round + 1)), "announcer");
+        setTurnActive(true);
+        inputRef.current?.focus();
+      }, 600);
+    }, 500);
+  }, [opponentStunned, round, playerHp, addLog, triggerPlayerDamage, addSpectatorReaction, playerPersonality]);
+
+  // ---- Command handler ----
   const handleCommand = useCallback(() => {
     if (!command.trim() || !turnActive || battleOver) return;
     const cmd = command.trim().toUpperCase();
     setCommand("");
-    setTurnActive(false);
 
-    const playerDmg = Math.floor(Math.random() * 15) + 8 + (berserk ? 10 : 0);
+    // Check for improv command
+    const improvMove = matchImprovCommand(cmd);
+    if (improvMove) {
+      addLog(`> ${cmd}`, "player");
+      addLog(`/// IMPROV COMMAND RECOGNIZED: ${improvMove.name}`, "system");
+      executePlayerMove(improvMove);
+      return;
+    }
+
+    // Otherwise pick a random core/biome move based on input
     addLog(`> ${cmd}`, "player");
+    const availableMoves = getAvailableMoves(PLAYER_BIOME, PLAYER_PERSONALITY, rage);
+    const selectedMove = getRandomItem(availableMoves.filter(m => m.category !== 'personality' || rage >= 70));
+    executePlayerMove(selectedMove);
+  }, [command, turnActive, battleOver, rage, addLog, executePlayerMove]);
 
-    setTimeout(() => {
-      addLog(`IRON MAW deals ${playerDmg} DAMAGE`, "damage");
-      triggerOpponentDamage(playerDmg);
-      addLog(getRandomItem(playerPersonality.taunt_attack), "commentary");
-      addSpectatorReaction("opponent_hit");
-      if (playerDmg > 18) {
-        const line = getRandomItem(ANNOUNCER_LINES.big_hit).replace("{dmg}", String(playerDmg));
-        addLog(line, "announcer");
-        addSpectatorReaction("big_damage", { dmg: String(playerDmg) });
-      }
-    }, 400);
-
-    setTimeout(() => {
-      if (opponentHp - playerDmg <= 0) return;
-      const move = getRandomItem(OPPONENT_MOVES);
-      addLog(move, "opponent");
-
-      setTimeout(() => {
-        const oppDmg = Math.floor(Math.random() * 12) + 5;
-        addLog(`PRISMA DANCER deals ${oppDmg} DAMAGE`, "damage");
-        triggerPlayerDamage(oppDmg);
-        addLog(getRandomItem(opponentPersonality.taunt_attack), "commentary");
-        addSpectatorReaction("player_hit");
-
-        // Player reaction to being hit
-        setTimeout(() => {
-          addLog(getRandomItem(playerPersonality.react_hit), "commentary");
-
-          // Check low HP commentary
-          const newPlayerHp = playerHp - oppDmg;
-          const newOppHp = opponentHp - playerDmg;
-          if (newPlayerHp < 30 && newPlayerHp > 0) {
-            const line = getRandomItem(ANNOUNCER_LINES.low_hp).replace("{name}", "IRON MAW");
-            addLog(line, "announcer");
-            addLog(getRandomItem(playerPersonality.react_low_hp), "commentary");
-          }
-          if (newOppHp < 30 && newOppHp > 0) {
-            const line = getRandomItem(ANNOUNCER_LINES.low_hp).replace("{name}", "PRISMA DANCER");
-            addLog(line, "announcer");
-          }
-          if ((newPlayerHp < 15 || newOppHp < 15) && newPlayerHp > 0 && newOppHp > 0) {
-            addLog(getRandomItem(ANNOUNCER_LINES.near_death), "announcer");
-          }
-
-          setRound((r) => r + 1);
-          const nextRound = round + 1;
-          const roundLine = getRandomItem(ANNOUNCER_LINES.round_start).replace("{round}", String(nextRound));
-          addLog(roundLine, "announcer");
-          setTurnActive(true);
-          inputRef.current?.focus();
-        }, 600);
-      }, 500);
-    }, 1000);
-  }, [command, turnActive, battleOver, berserk, opponentHp, playerHp, round, addLog, triggerOpponentDamage, triggerPlayerDamage, addSpectatorReaction, playerPersonality, opponentPersonality]);
+  // ---- Move selection ----
+  const handleMoveSelect = useCallback((move: BattleMove) => {
+    if (!turnActive || battleOver) return;
+    addLog(`> ${move.name}`, "player");
+    executePlayerMove(move);
+  }, [turnActive, battleOver, addLog, executePlayerMove]);
 
   const handleSurrender = useCallback(() => {
     if (battleOver) return;
@@ -294,6 +616,9 @@ const BattleArena = () => {
     setChatInput("");
   }, [chatInput, addChat]);
 
+  // Available moves for selection panel
+  const availableMoves = getAvailableMoves(PLAYER_BIOME, PLAYER_PERSONALITY, rage);
+
   const logColor = (type: LogEntry["type"]) => {
     switch (type) {
       case "system": return "text-muted-foreground";
@@ -303,6 +628,7 @@ const BattleArena = () => {
       case "critical": return "text-neon-claw font-bold";
       case "commentary": return "text-foreground/70 italic";
       case "announcer": return "text-rust-gold font-bold";
+      case "move_name": return "text-toxic-shard font-bold uppercase";
     }
   };
 
@@ -312,9 +638,43 @@ const BattleArena = () => {
     return "hsl(var(--neon-claw))";
   };
 
+  const moveCategoryColor = (cat: BattleMove['category']) => {
+    switch (cat) {
+      case 'core': return 'border-neon-claw/40 text-neon-claw';
+      case 'biome_scrap': return 'border-rust-gold/40 text-rust-gold';
+      case 'biome_crystal': return 'border-glitch-cyan/40 text-glitch-cyan';
+      case 'biome_void': return 'border-glitch-cyan/40 text-glitch-cyan';
+      case 'personality': return 'border-neon-claw/60 text-neon-claw';
+      case 'improv': return 'border-toxic-shard/40 text-toxic-shard';
+    }
+  };
+
   return (
-    <div className={`min-h-screen bg-background overflow-hidden relative scanlines vignette arena-grid ${shaking ? "impact-shake" : ""}`}>
+    <div className={`min-h-screen bg-background overflow-hidden relative scanlines vignette arena-grid ${shaking ? "impact-shake" : ""} ${heavyShake ? "vfx-heavy-shake" : ""}`}>
       {berserk && <div className="berserk-overlay" />}
+      {showRealityTear && <div className="vfx-reality-tear" />}
+      {showStaticOverlay && <div className="vfx-static-overlay" />}
+      {showDisconnectStamp && (
+        <div className="vfx-disconnect-stamp">
+          <span>DISCONNECTED</span>
+        </div>
+      )}
+      {showTauntText && (
+        <div className="vfx-taunt-text">
+          <span>{showTauntText}</span>
+        </div>
+      )}
+      {activeVfx.some(v => v.type === 'crit-vignette') && <div className="vfx-crit-vignette" />}
+      {activeVfx.some(v => v.type === 'berserk-flash') && <div className="vfx-berserk-flash" />}
+      {activeVfx.some(v => v.type === 'void-flash') && <div className="vfx-void-flash" />}
+      {activeVfx.some(v => v.type === 'slow-mo') && <div className="vfx-slow-mo" />}
+
+      {/* Move name flash */}
+      {moveNameFlash && (
+        <div className="vfx-move-name" style={{ color: moveNameFlash.color }}>
+          {moveNameFlash.text}
+        </div>
+      )}
 
       {/* Top HUD bar */}
       <div className="relative z-10 flex items-stretch justify-between border-b border-border bg-card/80 backdrop-blur-sm">
@@ -375,9 +735,11 @@ const BattleArena = () => {
         <div className="flex-1 flex items-center justify-center relative overflow-hidden">
           {/* Player beast */}
           <div className="absolute left-[10%] bottom-[15%] w-[35%] max-w-[300px]">
-            <div className="relative border border-neon-claw/20 bg-card/20 overflow-hidden">
+            <div className={`relative border border-neon-claw/20 bg-card/20 overflow-hidden ${playerBeastVfx} ${playerBerserkScale ? "vfx-beast-berserk" : ""}`}>
               <img src={beastIronmaw} alt="Iron Maw" className="w-full aspect-square object-cover" />
               {playerDamageFlash && <div className="damage-overlay" />}
+              {playerBerserkScale && <div className="vfx-vein-overlay" />}
+              {showGuardianShield && <div className="vfx-guardian-shield" />}
               <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-neon-claw/50" />
               <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-neon-claw/50" />
               <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-neon-claw/50" />
@@ -388,10 +750,18 @@ const BattleArena = () => {
                 </div>
               )}
             </div>
+            {/* Player damage popups */}
+            {damagePopups.filter(p => p.side === "player").map((p) => (
+              <div key={p.id} className={`vfx-damage-number ${p.isCrit ? "crit" : p.isHeal ? "heal" : "normal"}`}
+                   style={{ left: `${30 + Math.random() * 40}%`, top: `${20 + Math.random() * 30}%` }}>
+                {p.isHeal ? `+${p.value}` : `-${p.value}`}
+              </div>
+            ))}
           </div>
+
           {/* Opponent beast */}
           <div className="absolute right-[10%] top-[10%] w-[30%] max-w-[260px]">
-            <div className="relative border border-glitch-cyan/20 bg-card/20 overflow-hidden">
+            <div className={`relative border border-glitch-cyan/20 bg-card/20 overflow-hidden ${opponentBeastVfx}`}>
               <img src={beastPrisma} alt="Prisma Dancer" className="w-full aspect-square object-cover" />
               {opponentDamageFlash && <div className="damage-overlay" />}
               <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-glitch-cyan/50" />
@@ -399,21 +769,56 @@ const BattleArena = () => {
               <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-glitch-cyan/50" />
               <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-glitch-cyan/50" />
             </div>
+            {/* Opponent damage popups */}
+            {damagePopups.filter(p => p.side === "opponent").map((p) => (
+              <div key={p.id} className={`vfx-damage-number ${p.isCrit ? "crit" : p.isHeal ? "heal" : "normal"}`}
+                   style={{ left: `${30 + Math.random() * 40}%`, top: `${20 + Math.random() * 30}%` }}>
+                {p.isHeal ? `+${p.value}` : `-${p.value}`}
+              </div>
+            ))}
           </div>
+
           {/* VS indicator */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="font-marker text-4xl text-neon-claw/20 select-none">VS</span>
           </div>
 
-          {/* Viewer count badge */}
+          {/* Viewer count */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-card/80 border border-border backdrop-blur-sm">
-            <div className="w-2 h-2 rounded-full bg-neon-claw animate-pulse" />
+            <div className="w-2 h-2 bg-neon-claw animate-pulse" />
             <span className="font-data text-[9px] text-foreground uppercase tracking-wider">LIVE</span>
             <span className="font-data text-[9px] text-muted-foreground">{viewerCount.toLocaleString()} watching</span>
           </div>
+
+          {/* Move selection panel */}
+          {showMoveSelect && turnActive && !battleOver && (
+            <div className="absolute bottom-4 left-4 right-4 z-20 bg-card/95 border border-border backdrop-blur-sm p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-display text-xs font-bold uppercase tracking-wider text-foreground">SELECT MOVE</span>
+                <button onClick={() => setShowMoveSelect(false)} className="font-data text-[9px] text-muted-foreground hover:text-foreground uppercase tracking-wider">CLOSE</button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto">
+                {availableMoves.map((move) => (
+                  <button
+                    key={move.id}
+                    onClick={() => handleMoveSelect(move)}
+                    className={`text-left p-2 border ${moveCategoryColor(move.category)} bg-card/50 hover:bg-card transition-colors`}
+                  >
+                    <span className="font-display text-[10px] font-bold uppercase tracking-wider block">{move.name}</span>
+                    <span className="font-data text-[8px] text-muted-foreground block mt-0.5">
+                      DMG: {move.effect.value} {move.effect.selfDamage ? `/ SELF: -${move.effect.selfDamage}` : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="font-data text-[8px] text-muted-foreground/50 mt-2 uppercase tracking-wider">
+                OR TYPE IMPROV: "GO FOR THE EYES" / "PLAY DEAD" / "SHOWBOAT" / "OVERCHARGE"
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Right panel: Battle log + Rage + Spectator chat */}
+        {/* Right panel */}
         <div className="w-[340px] border-l border-border flex flex-col bg-card/50">
           {/* Rage meter */}
           <div className="p-3 border-b border-border">
@@ -433,9 +838,10 @@ const BattleArena = () => {
               ))}
             </div>
             {berserk && <p className="font-data text-[9px] text-neon-claw mt-1 uppercase tracking-wider">/// BERSERK — DAMAGE +50%</p>}
+            {rage >= 70 && !berserk && <p className="font-data text-[9px] text-rust-gold mt-1 uppercase tracking-wider">/// BERSERK OVERDRIVE UNLOCKED</p>}
           </div>
 
-          {/* Battle log terminal */}
+          {/* Battle log */}
           <div className="flex-1 flex flex-col min-h-0" style={{ maxHeight: "45%" }}>
             <div className="px-3 py-2 border-b border-border flex items-center gap-2">
               <div className="w-2 h-2 bg-toxic-shard" />
@@ -445,11 +851,7 @@ const BattleArena = () => {
               {log.map((entry) => (
                 <div key={entry.id} className="log-entry flex gap-2">
                   <span className="font-data text-[9px] text-muted-foreground/50 flex-shrink-0 w-10">{entry.timestamp}</span>
-                  <span className={`font-data text-[10px] ${logColor(entry.type)}`}>
-                    {entry.type === "commentary" && "💬 "}
-                    {entry.type === "announcer" && "📢 "}
-                    {entry.text}
-                  </span>
+                  <span className={`font-data text-[10px] ${logColor(entry.type)}`}>{entry.text}</span>
                 </div>
               ))}
             </div>
@@ -477,7 +879,6 @@ const BattleArena = () => {
                 <p className="font-data text-[9px] text-muted-foreground/40 text-center py-4">waiting for chat...</p>
               )}
             </div>
-            {/* Chat input */}
             <div className="p-2 border-t border-border flex gap-1.5">
               <input
                 type="text"
@@ -488,10 +889,7 @@ const BattleArena = () => {
                 maxLength={80}
                 className="flex-1 bg-void-black border border-static-gray px-2 py-1 font-data text-[10px] text-foreground placeholder:text-muted-foreground/30 outline-none focus:border-toxic-shard/50"
               />
-              <button
-                onClick={handleChatSend}
-                className="px-2 py-1 border border-toxic-shard/40 bg-toxic-shard/10 font-data text-[9px] text-toxic-shard uppercase tracking-wider hover:bg-toxic-shard/20 transition-colors"
-              >
+              <button onClick={handleChatSend} className="px-2 py-1 border border-toxic-shard/40 bg-toxic-shard/10 font-data text-[9px] text-toxic-shard uppercase tracking-wider hover:bg-toxic-shard/20 transition-colors">
                 SEND
               </button>
             </div>
@@ -510,6 +908,13 @@ const BattleArena = () => {
             <SurrenderFlagIcon size={14} className="text-rust-gold" />
             SURRENDER
           </button>
+          <button
+            onClick={() => setShowMoveSelect(!showMoveSelect)}
+            disabled={!turnActive || battleOver}
+            className="px-3 py-2 border border-glitch-cyan/40 bg-glitch-cyan/5 font-data text-[10px] uppercase tracking-wider text-glitch-cyan hover:bg-glitch-cyan/15 transition-colors disabled:opacity-30"
+          >
+            MOVES
+          </button>
           <div className="flex-1 flex items-center gap-2 border border-toxic-shard/30 bg-void-black px-3 py-2">
             <TransmitIcon size={14} className="text-toxic-shard/60 flex-shrink-0" />
             <input
@@ -518,7 +923,7 @@ const BattleArena = () => {
               value={command}
               onChange={(e) => setCommand(e.target.value.slice(0, 50))}
               onKeyDown={(e) => e.key === "Enter" && handleCommand()}
-              placeholder={battleOver ? "COMBAT ENDED" : turnActive ? "TRANSMIT COMMAND..." : "AWAITING RESPONSE..."}
+              placeholder={battleOver ? "COMBAT ENDED" : turnActive ? "TYPE COMMAND OR IMPROV..." : "AWAITING RESPONSE..."}
               disabled={!turnActive || battleOver}
               maxLength={50}
               className="terminal-input flex-1 bg-transparent font-data text-xs text-toxic-shard placeholder:text-toxic-shard/30 outline-none border-none uppercase tracking-wider disabled:opacity-30"
@@ -540,7 +945,7 @@ const BattleArena = () => {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-void-black/80 backdrop-blur-sm">
           <div className="text-center">
             <p className={`font-display text-3xl font-bold uppercase tracking-wider ${winner === "player" ? "text-toxic-shard" : "text-neon-claw"} chromatic`}>
-              {winner === "player" ? "VICTORY" : "DEFEAT"}
+              {winner === "player" ? "GENETIC DOMINANCE CONFIRMED" : "SPECIMEN NEUTRALIZED"}
             </p>
             <div className="mt-2 px-4 py-2 border border-rust-gold/50 bg-rust-gold/10 inline-block">
               <p className="font-data text-sm text-rust-gold font-bold">
@@ -548,7 +953,7 @@ const BattleArena = () => {
               </p>
             </div>
             <p className="font-data text-[10px] text-muted-foreground mt-2 uppercase tracking-wider">
-              {winner === "player" ? "SPECIMEN NEUTRALIZED — POT CLAIMED" : "YOUR BEAST HAS FALLEN — POT FORFEITED"}
+              ROUNDS: {round} // TIME: {getTimestamp(timer)} // RAGE PEAK: {rage}%
             </p>
             <button
               onClick={() => navigate("/")}
