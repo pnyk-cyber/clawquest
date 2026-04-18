@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# ClawQuest — AI Pet Battle Arena on Starknet
 
-## Project info
+> **Hackathon Category: Arcade**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+A P2P arcade platform where players mint AI-powered pets, stake SHARD tokens, and watch their beasts fight it out in real-time. Built on Starknet using the Starkzap SDK for wallet management, gasless transactions, and on-chain token flows.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## What is ClawQuest?
 
-**Use Lovable**
+ClawQuest lets you:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Create AI pets** — each beast has a procedurally generated avatar, personality traits, and a learning strategy that evolves after every fight
+- **Stake and bet** — create lobbies with entry fees, lock stakes, and winner takes 90% of the pot
+- **Watch live battles** — event-driven battle engine streams a full timeline with animations, commentary, and spectator reactions
+- **Earn while playing** — SHARD token rewards flow automatically to the winner's wallet via Starkzap
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+| Layer | Tech |
+|---|---|
+| Blockchain | Starknet (via Starkzap SDK) |
+| Backend | FastAPI (Python) |
+| Frontend | React + Vite + TypeScript + Tailwind |
+| AI / Learning | In-process strategy weight updates per battle |
+| Wallet | Starkzap `StarkSigner`, wallet-owned agents |
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Architecture
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+ClawQuest
+├── app/                      # FastAPI backend
+│   ├── main.py               # API routes
+│   ├── agents.py             # Agent creation and seeding
+│   ├── battle.py             # Turn-based battle engine
+│   ├── models.py             # Pydantic data models
+│   ├── rewards.py            # Stake locking and pot distribution
+│   ├── learning.py           # Post-battle AI weight updates
+│   ├── avatar.py             # Deterministic avatar generation
+│   ├── commentary_engine.py  # Live commentary lines
+│   ├── dialogue.py           # Agent dialogue / personality
+│   ├── spectators.py         # Spectator reaction events
+│   ├── event_stream.py       # Battle event sequencing
+│   └── storage.py            # In-memory store
+└── src/                      # React + Vite frontend
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## How It Works
 
-**Use GitHub Codespaces**
+### 1. Create your AI pet
+```bash
+POST /agent/create
+{ "owner_wallet": "0xYOUR_WALLET" }
+```
+Returns an agent with a unique avatar, personality traits (`Aggressive`, `Calculated`, `Unstable`, `Loyal`, `Vain`), and starting strategy weights.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 2. Open a lobby
+```bash
+POST /lobby/create
+{ "agentA": "iron_maw_1", "arena": "Crystal Spire Gardens", "entry_fee": 50 }
+```
 
-## What technologies are used for this project?
+### 3. Start the battle
+```bash
+POST /battle/start
+{ "agentA": "iron_maw_1", "agentB": "null_wraith_2", "entry_fee": 50 }
+```
+Stakes are locked, the battle runs, and rewards are distributed instantly.
 
-This project is built with:
+### 4. Replay the fight
+```bash
+GET /battle/{battle_id}/timeline
+```
+Returns a full event stream with per-frame animation timestamps for the frontend to replay.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Reward Flow
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```
+Entry fees  →  Pot
+Winner      →  90% of pot
+Protocol    →  5%  of pot
+Arena owner →  5%  of pot
+```
 
-## Can I connect a custom domain to my Lovable project?
+All flows are tracked via Starkzap wallet credits and debits, ready to wire to on-chain STRK/custom token transfers.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## AI Learning
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+After every battle, each agent's strategy weights update:
+
+- **Win** — boost weights of moves that landed
+- **Loss** — reduce confidence in used moves, nudge others up
+- **Low HP** — bias toward defense mid-battle
+- **Low enemy HP** — bias toward special moves
+
+Weights normalize after every update so the agent keeps improving over time.
+
+---
+
+## Battle Events
+
+Every battle emits a structured event stream:
+
+| Event | Description |
+|---|---|
+| `LOBBY_READY` | Both players joined |
+| `POT_LOCKED` | Stakes deducted from wallets |
+| `BATTLE_START` | Fight begins |
+| `ATTACK` / `CRITICAL_HIT` | Turn actions |
+| `HP_LOW` | Beast in danger |
+| `ABILITY_USED` | Special move triggered |
+| `DIALOGUE` | Agent trash talk |
+| `COMMENTARY` | Live commentator line |
+| `SPECTATOR_REACTION` | Crowd response |
+| `MATCH_END` | Winner declared |
+| `POT_DISTRIBUTED` | Rewards sent |
+| `LEARNING_UPDATE` | AI weights updated |
+
+---
+
+## Run Locally
+
+**Backend**
+```bash
+cd app
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+API docs at `http://localhost:8000/docs`
+
+**Frontend**
+```bash
+npm install
+npm run dev
+```
+App at `http://localhost:5173`
+
+---
+
+## Starkzap Integration
+
+ClawQuest uses the Starkzap SDK for:
+
+- Wallet onboarding with `StarkSigner`
+- Wallet-owned agent accounts (each beast has its own `agent_wallet`)
+- Token balance queries via `wallet.balanceOf()`
+- Gasless SHARD token reward transfers via AVNU paymaster
+
+---
+
+## License
+
+MIT
